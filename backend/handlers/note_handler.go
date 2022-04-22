@@ -31,6 +31,11 @@ func (n *noteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Title == "" || req.Content == "" {
+		http.Error(w, "Title and Content are required", http.StatusBadRequest)
+		return
+	}
+
 	note := &entities.Note{
 		Title:   req.Title,
 		Content: req.Content,

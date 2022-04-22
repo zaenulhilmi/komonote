@@ -13,6 +13,86 @@ import (
 
 func Test_Handler_Returns_201_Created_When_Resource_Created(t *testing.T) {
 
+	for _, tt := range getValidCreateRequestTable() {
+		t.Run(tt.name, func(t *testing.T) {
+			request, err := http.NewRequest("POST", "/notes", strings.NewReader(tt.body))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			recorder := runHandler(request)
+
+			assert.Equal(t, 201, recorder.Code)
+			expectedResult, _ := tt.expected.MarshalJSON()
+			assert.JSONEq(t, string(expectedResult), recorder.Body.String())
+
+		})
+	}
+}
+
+func Test_Handler_Return_400_BadRequest_When_Request_Empty_Or_Invalid_JSON(t *testing.T) {
+	for _, tt := range getInvalidCreateRequestTable() {
+		t.Run(tt.name, func(t *testing.T) {
+			request, err := http.NewRequest("POST", "/notes", strings.NewReader(tt.body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			recorder := runHandler(request)
+			assert.Equal(t, 400, recorder.Code)
+		})
+	}
+
+}
+
+func runHandler(request *http.Request) *httptest.ResponseRecorder {
+
+	recorder := httptest.NewRecorder()
+	noteHandler := handlers.NewNoteHandler()
+	handler := http.HandlerFunc(noteHandler.CreateNote)
+	handler.ServeHTTP(recorder, request)
+
+	return recorder
+}
+
+func getInvalidCreateRequestTable() []struct {
+	name string
+	body string
+} {
+	table := []struct {
+		name string
+		body string
+	}{
+		{
+			name: "empty body",
+			body: ``,
+		},
+
+		{
+			name: "invalid json",
+			body: `title`,
+		},
+		{
+			name: "Create_New_Note_With_Empty_Title",
+			body: `{"title":"","content":"test"}`,
+		},
+		{
+			name: "Create_New_Note_With_Empty_Content",
+			body: `{"title":"test","content":""}`,
+		},
+		{
+			name: "Create_New_Note_With_Empty_Title_And_Content",
+			body: `{"title":"","content":""}`,
+		},
+	}
+
+	return table
+}
+
+func getValidCreateRequestTable() []struct {
+	name     string
+	body     string
+	expected entities.Note
+} {
 	table := []struct {
 		name     string
 		body     string
@@ -30,23 +110,5 @@ func Test_Handler_Returns_201_Created_When_Resource_Created(t *testing.T) {
 		},
 	}
 
-	for _, tt := range table {
-		t.Run(tt.name, func(t *testing.T) {
-			request, err := http.NewRequest("POST", "/notes", strings.NewReader(tt.body))
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			recorder := httptest.NewRecorder()
-
-			noteHandler := handlers.NewNoteHandler()
-			handler := http.HandlerFunc(noteHandler.CreateNote)
-			handler.ServeHTTP(recorder, request)
-
-			assert.Equal(t, 201, recorder.Code)
-			expectedResult, _ := tt.expected.MarshalJSON()
-			assert.JSONEq(t, string(expectedResult), recorder.Body.String())
-
-		})
-	}
+	return table
 }
