@@ -11,8 +11,10 @@ import (
 	"github.com/zaenulhilmi/komonote/handlers"
 )
 
-func Test_Handler_Returns_201_Created_When_Resource_Created(t *testing.T) {
 
+var noteHandler handlers.NoteHandler = handlers.NewNoteHandler()
+
+func Test_Handler_Returns_201_Created_When_Resource_Created(t *testing.T) {
 	for _, tt := range getValidCreateRequestTable() {
 		t.Run(tt.name, func(t *testing.T) {
 			request, err := http.NewRequest("POST", "/notes", strings.NewReader(tt.body))
@@ -20,7 +22,7 @@ func Test_Handler_Returns_201_Created_When_Resource_Created(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			recorder := runHandler(request)
+			recorder := runHandler(request, noteHandler.CreateNote)
 
 			assert.Equal(t, 201, recorder.Code)
 			expectedResult, _ := tt.expected.MarshalJSON()
@@ -37,18 +39,28 @@ func Test_Handler_Return_400_BadRequest_When_Request_Empty_Or_Invalid_JSON(t *te
 			if err != nil {
 				t.Fatal(err)
 			}
-			recorder := runHandler(request)
+
+			recorder := runHandler(request, noteHandler.CreateNote)
 			assert.Equal(t, 400, recorder.Code)
 		})
 	}
 
 }
 
-func runHandler(request *http.Request) *httptest.ResponseRecorder {
+func Test_Handler_Returns_200_OK_When_Resource_Found(t *testing.T) {
+    request, err := http.NewRequest("GET", "/notes", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+    recorder := runHandler(request, noteHandler.FindNote)
+
+    assert.Equal(t, 200, recorder.Code)
+}
+
+func runHandler(request *http.Request, handlerFunc http.HandlerFunc) *httptest.ResponseRecorder {
 
 	recorder := httptest.NewRecorder()
-	noteHandler := handlers.NewNoteHandler()
-	handler := http.HandlerFunc(noteHandler.CreateNote)
+	handler := http.HandlerFunc(handlerFunc)
 	handler.ServeHTTP(recorder, request)
 
 	return recorder

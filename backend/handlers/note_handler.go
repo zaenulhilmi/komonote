@@ -9,6 +9,7 @@ import (
 
 type NoteHandler interface {
 	CreateNote(w http.ResponseWriter, r *http.Request)
+	FindNote(w http.ResponseWriter, r *http.Request)
 }
 
 type noteHandler struct{}
@@ -45,4 +46,8 @@ func (n *noteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	response, _ := note.MarshalJSON()
 
 	w.Write([]byte(response))
+}
+
+func (n *noteHandler) FindNote(w http.ResponseWriter, r *http.Request) {
+    w.WriteHeader(http.StatusOK)
 }
