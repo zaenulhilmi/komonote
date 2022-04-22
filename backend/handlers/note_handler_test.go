@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/zaenulhilmi/komonote/entities"
 	"github.com/zaenulhilmi/komonote/handlers"
@@ -72,16 +73,20 @@ func Test_Handler_Return_400_BadRequest_When_Request_Empty_Or_Invalid_JSON(t *te
 }
 
 func Test_Handler_Returns_200_OK_When_Resource_Found(t *testing.T) {
-	request, err := http.NewRequest("GET", "/notes", nil)
+	id := uuid.New()
+	request, err := http.NewRequest("GET", "/notes/"+id.String(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	noteServiceMock := new(mocks.NoteServiceMock)
+	noteServiceMock.On("GetNote", id).Return(&entities.Note{Title: "test", Content: "test"}, nil)
+
 	noteHandler := handlers.NewNoteHandler(noteServiceMock)
 	recorder := runHandler(request, noteHandler.GetNote)
 
 	assert.Equal(t, 200, recorder.Code)
+	noteServiceMock.AssertCalled(t, "GetNote", id)
 }
 
 func runHandler(request *http.Request, handlerFunc http.HandlerFunc) *httptest.ResponseRecorder {

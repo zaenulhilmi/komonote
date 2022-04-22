@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"path"
 
+	"github.com/google/uuid"
 	"github.com/zaenulhilmi/komonote/services"
 )
 
@@ -55,5 +57,11 @@ func (n *noteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (n *noteHandler) GetNote(w http.ResponseWriter, r *http.Request) {
+	id := path.Base(r.URL.Path)
+
+	resId, _ := uuid.Parse(id)
+
+	n.service.GetNote(resId)
+
 	w.WriteHeader(http.StatusOK)
 }
