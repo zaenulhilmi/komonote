@@ -24,7 +24,6 @@ func Test_Handler_Returns_201_Created_When_Resource_Created(t *testing.T) {
 			noteServiceMock.On("CreateNote", tt.expected.Title, tt.expected.Content).Return(&tt.expected, nil)
 
 			noteHandler := handlers.NewNoteHandler(noteServiceMock)
-
 			recorder := runHandler(request, noteHandler.CreateNote)
 
 			assert.Equal(t, 201, recorder.Code)

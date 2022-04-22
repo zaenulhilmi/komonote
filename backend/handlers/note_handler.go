@@ -4,12 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/zaenulhilmi/komonote/entities"
+	"github.com/zaenulhilmi/komonote/services"
 )
-
-type NoteService interface {
-	CreateNote(title, content string) (*entities.Note, error)
-}
 
 type NoteHandler interface {
 	CreateNote(w http.ResponseWriter, r *http.Request)
@@ -17,10 +13,10 @@ type NoteHandler interface {
 }
 
 type noteHandler struct {
-	service NoteService
+	service services.NoteService
 }
 
-func NewNoteHandler(service NoteService) NoteHandler {
+func NewNoteHandler(service services.NoteService) NoteHandler {
 	return &noteHandler{
 		service: service,
 	}
