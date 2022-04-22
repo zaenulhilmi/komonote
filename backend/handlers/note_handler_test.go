@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,9 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/zaenulhilmi/komonote/entities"
 	"github.com/zaenulhilmi/komonote/handlers"
+	"github.com/zaenulhilmi/komonote/mocks"
 )
-
-var noteHandler handlers.NoteHandler = handlers.NewNoteHandler()
 
 func Test_Handler_Returns_201_Created_When_Resource_Created(t *testing.T) {
 	for _, tt := range getValidCreateRequestTable() {
@@ -20,13 +20,36 @@ func Test_Handler_Returns_201_Created_When_Resource_Created(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			noteServiceMock := new(mocks.NoteServiceMock)
+			noteServiceMock.On("CreateNote", tt.expected.Title, tt.expected.Content).Return(&tt.expected, nil)
+
+			noteHandler := handlers.NewNoteHandler(noteServiceMock)
 
 			recorder := runHandler(request, noteHandler.CreateNote)
 
 			assert.Equal(t, 201, recorder.Code)
 			expectedResult, _ := tt.expected.MarshalJSON()
 			assert.JSONEq(t, string(expectedResult), recorder.Body.String())
+			noteServiceMock.AssertCalled(t, "CreateNote", tt.expected.Title, tt.expected.Content)
+		})
+	}
+}
 
+func Test_Handler_Returns_500_InternalServerError_When_Resource_Created(t *testing.T) {
+	for _, tt := range getValidCreateRequestTable() {
+		t.Run(tt.name, func(t *testing.T) {
+			request, err := http.NewRequest("POST", "/notes", strings.NewReader(tt.body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			noteServiceMock := new(mocks.NoteServiceMock)
+			noteServiceMock.On("CreateNote", tt.expected.Title, tt.expected.Content).Return(&tt.expected, errors.New("error"))
+			noteHandler := handlers.NewNoteHandler(noteServiceMock)
+
+			recorder := runHandler(request, noteHandler.CreateNote)
+
+			assert.Equal(t, 500, recorder.Code)
+			noteServiceMock.AssertCalled(t, "CreateNote", tt.expected.Title, tt.expected.Content)
 		})
 	}
 }
@@ -39,6 +62,9 @@ func Test_Handler_Return_400_BadRequest_When_Request_Empty_Or_Invalid_JSON(t *te
 				t.Fatal(err)
 			}
 
+			noteServiceMock := new(mocks.NoteServiceMock)
+
+			noteHandler := handlers.NewNoteHandler(noteServiceMock)
 			recorder := runHandler(request, noteHandler.CreateNote)
 			assert.Equal(t, 400, recorder.Code)
 		})
@@ -51,6 +77,9 @@ func Test_Handler_Returns_200_OK_When_Resource_Found(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	noteServiceMock := new(mocks.NoteServiceMock)
+	noteHandler := handlers.NewNoteHandler(noteServiceMock)
 	recorder := runHandler(request, noteHandler.GetNote)
 
 	assert.Equal(t, 200, recorder.Code)

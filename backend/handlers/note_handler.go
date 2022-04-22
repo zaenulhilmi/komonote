@@ -7,15 +7,23 @@ import (
 	"github.com/zaenulhilmi/komonote/entities"
 )
 
+type NoteService interface {
+	CreateNote(title, content string) (*entities.Note, error)
+}
+
 type NoteHandler interface {
 	CreateNote(w http.ResponseWriter, r *http.Request)
 	GetNote(w http.ResponseWriter, r *http.Request)
 }
 
-type noteHandler struct{}
+type noteHandler struct {
+	service NoteService
+}
 
-func NewNoteHandler() NoteHandler {
-	return &noteHandler{}
+func NewNoteHandler(service NoteService) NoteHandler {
+	return &noteHandler{
+		service: service,
+	}
 }
 
 type CreateNoteRequest struct {
@@ -37,9 +45,11 @@ func (n *noteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	note := &entities.Note{
-		Title:   req.Title,
-		Content: req.Content,
+	note, err := n.service.CreateNote(req.Title, req.Content)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
