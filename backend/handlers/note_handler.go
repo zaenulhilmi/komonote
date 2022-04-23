@@ -61,7 +61,12 @@ func (n *noteHandler) GetNote(w http.ResponseWriter, r *http.Request) {
 
 	resId, _ := uuid.Parse(id)
 
-	n.service.GetNote(resId)
+	note, _ := n.service.GetNote(resId)
+
+	if note == nil {
+		http.Error(w, "Note not found", http.StatusNotFound)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }

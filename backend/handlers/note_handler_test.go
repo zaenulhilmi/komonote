@@ -89,6 +89,23 @@ func Test_Handler_Returns_200_OK_When_Resource_Found(t *testing.T) {
 	noteServiceMock.AssertCalled(t, "GetNote", id)
 }
 
+func Test_Handler_Returns_404_NotFound_When_Resource_Not_Found(t *testing.T) {
+	id := uuid.New()
+	request, err := http.NewRequest("GET", "/notes/"+id.String(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	noteServiceMock := new(mocks.NoteServiceMock)
+	var note *entities.Note
+	noteServiceMock.On("GetNote", id).Return(note, nil)
+
+	noteHandler := handlers.NewNoteHandler(noteServiceMock)
+	recorder := runHandler(request, noteHandler.GetNote)
+	assert.Equal(t, 404, recorder.Code)
+	noteServiceMock.AssertCalled(t, "GetNote", id)
+
+}
+
 func runHandler(request *http.Request, handlerFunc http.HandlerFunc) *httptest.ResponseRecorder {
 
 	recorder := httptest.NewRecorder()
